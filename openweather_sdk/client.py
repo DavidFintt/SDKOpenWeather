@@ -12,3 +12,6 @@ class OpenWeatherClient:
 
     def get_forecast(self, city=None, lat=None, lon=None):
         pass
+
+    def get_complete_weather(self, city=None, lat=None, lon=None):
+        pass

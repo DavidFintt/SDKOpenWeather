@@ -13,3 +13,9 @@ class CurrentWeather:
 class DayForecast:
     date: str
     temp: int
+
+
+@dataclass
+class CompleteForecast:
+    current: CurrentWeather
+    forecast: list[DayForecast]
