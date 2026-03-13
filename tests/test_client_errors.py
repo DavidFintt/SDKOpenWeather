@@ -94,6 +94,18 @@ class TestCoordinatesValidation:
         with pytest.raises(InvalidInputError):
             client.get_current_weather(lat=[51.5, 48.8], lon=[-0.1, 2.3])
 
+    @patch("openweather_sdk.client.requests.get")
+    def test_no_weather_data_for_coordinates_raises_error(self, mock_get):
+        """Coordenadas válidas mas sem dados meteorológicos (resposta vazia)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {}
+        mock_get.return_value = mock_response
+
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(NoWeatherDataError):
+            client.get_current_weather(lat=0.0, lon=0.0)
+
 
 class TestAPIErrors:
     """ Testes relacionados a erros da API do OpenWeather. """
