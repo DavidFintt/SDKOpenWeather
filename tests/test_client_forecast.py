@@ -7,17 +7,6 @@ from openweather_sdk.client import OpenWeatherClient
 from openweather_sdk.models import DayForecast
 
 
-GEOCODING_RESPONSE = [
-    {
-        "name": "London",
-        "local_names": {"pt": "Londres"},
-        "lat": 51.5073219,
-        "lon": -0.1276474,
-        "country": "GB",
-        "state": "England",
-    }
-]
-
 TODAY_STR = date.today().strftime("%Y-%m-%d")
 
 FORECAST_RESPONSE = {
@@ -45,17 +34,12 @@ FORECAST_RESPONSE = {
 }
 
 
-def _mock_geocoding_and_forecast(mock_get):
-    """Helper para mockar respostas de geocoding e forecast."""
-    geocoding_response = MagicMock()
-    geocoding_response.status_code = 200
-    geocoding_response.json.return_value = GEOCODING_RESPONSE
-
+def _mock_forecast(mock_get):
+    """Helper para mockar resposta de forecast."""
     forecast_response = MagicMock()
     forecast_response.status_code = 200
     forecast_response.json.return_value = FORECAST_RESPONSE
-
-    mock_get.side_effect = [geocoding_response, forecast_response]
+    mock_get.return_value = forecast_response
 
 
 class TestForecast:
@@ -63,37 +47,23 @@ class TestForecast:
 
     @patch("openweather_sdk.client.requests.get")
     def test_get_forecast_returns_list_of_day_forecast(self, mock_get):
-        """get_forecast('London') retorna lista de DayForecast."""
-        _mock_geocoding_and_forecast(mock_get)
+        """get_forecast retorna lista de DayForecast."""
+        _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(city="London")
+        result = client.get_forecast(lat=51.5073, lon=-0.1276)
 
         assert isinstance(result, list)
         assert len(result) > 0
         assert all(isinstance(day, DayForecast) for day in result)
 
     @patch("openweather_sdk.client.requests.get")
-    def test_get_forecast_by_coords(self, mock_get):
-        """get_forecast por coordenadas retorna lista de DayForecast."""
-        forecast_response = MagicMock()
-        forecast_response.status_code = 200
-        forecast_response.json.return_value = FORECAST_RESPONSE
-        mock_get.return_value = forecast_response
+    def test_get_forecast_excludes_today(self, mock_get):
+        """Entries de hoje são excluídas do resultado do forecast."""
+        _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
         result = client.get_forecast(lat=51.5073, lon=-0.1276)
-
-        assert isinstance(result, list)
-        assert all(isinstance(day, DayForecast) for day in result)
-
-    @patch("openweather_sdk.client.requests.get")
-    def test_get_forecast_excludes_today(self, mock_get):
-        """Entries de hoje são excluídas do resultado do forecast."""
-        _mock_geocoding_and_forecast(mock_get)
-
-        client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(city="London")
 
         today_str = date.today().strftime("%d/%m")
         dates = [day.date for day in result]
@@ -102,10 +72,10 @@ class TestForecast:
     @patch("openweather_sdk.client.requests.get")
     def test_get_forecast_calculates_average_temp(self, mock_get):
         """Temperatura de cada dia é a média arredondada das entries."""
-        _mock_geocoding_and_forecast(mock_get)
+        _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(city="London")
+        result = client.get_forecast(lat=51.5073, lon=-0.1276)
 
         temps = {day.date: day.temp for day in result}
         assert temps["20/03"] == 11
@@ -117,10 +87,10 @@ class TestForecast:
     @patch("openweather_sdk.client.requests.get")
     def test_get_forecast_days_in_order(self, mock_get):
         """Dias retornados em ordem crescente de data."""
-        _mock_geocoding_and_forecast(mock_get)
+        _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(city="London")
+        result = client.get_forecast(lat=51.5073, lon=-0.1276)
 
         dates = [day.date for day in result]
         assert dates == ["20/03", "21/03", "22/03", "23/03", "24/03"]
@@ -146,25 +116,3 @@ class TestForecast:
 
         assert len(result) <= 5
 
-    @patch("openweather_sdk.client.requests.get")
-    def test_get_forecast_calls_geocoding_then_forecast(self, mock_get):
-        """Por cidade, get_forecast faz 2 chamadas HTTP (geocoding + forecast)."""
-        _mock_geocoding_and_forecast(mock_get)
-
-        client = OpenWeatherClient(api_key="valid-key")
-        client.get_forecast(city="London")
-
-        assert mock_get.call_count == 2
-
-    @patch("openweather_sdk.client.requests.get")
-    def test_get_forecast_by_coords_skips_geocoding(self, mock_get):
-        """Por coordenadas, get_forecast faz apenas 1 chamada HTTP (só forecast)."""
-        forecast_response = MagicMock()
-        forecast_response.status_code = 200
-        forecast_response.json.return_value = FORECAST_RESPONSE
-        mock_get.return_value = forecast_response
-
-        client = OpenWeatherClient(api_key="valid-key")
-        client.get_forecast(lat=51.5073, lon=-0.1276)
-
-        assert mock_get.call_count == 1

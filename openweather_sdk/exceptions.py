@@ -44,3 +44,9 @@ class RateLimitExceededError(OpenWeatherError):
     def __init__(self, 
         message="Limite de requisições atingido. Tente novamente mais tarde."):
         super().__init__(message)
+
+
+class RequestTimeoutError(OpenWeatherError):
+    def __init__(self, 
+        message="Tempo limite da requisição excedido. Tente novamente mais tarde."):
+        super().__init__(message)

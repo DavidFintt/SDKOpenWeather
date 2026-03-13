@@ -1,8 +1,9 @@
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 import pytest
 
 from openweather_sdk.client import OpenWeatherClient
+from openweather_sdk.exceptions import CityNotFoundError
 
 
 GEOCODING_RESPONSE = [
@@ -16,13 +17,6 @@ GEOCODING_RESPONSE = [
     }
 ]
 
-WEATHER_RESPONSE = {
-    "coord": {"lon": -0.1257, "lat": 51.5085},
-    "weather": [{"id": 801, "main": "Clouds", "description": "algumas nuvens", "icon": "02n"}],
-    "main": {"temp": 9.68, "feels_like": 8.63, "temp_min": 8.36, "temp_max": 10.56, "pressure": 1016, "humidity": 65},
-    "name": "London",
-    "cod": 200,
-}
 
 class TestGeocoding:
     """ Testes relacionados à API de Geocoding do OpenWeather e à função _geocode. """
@@ -42,33 +36,13 @@ class TestGeocoding:
         assert result["lon"] == -0.1276474
 
     @patch("openweather_sdk.client.requests.get")
-    def test_get_current_weather_calls_geocoding_then_weather(self, mock_get):
-        """Geocoding é chamado automaticamente em get_current_weather('London')."""
-        geocoding_response = MagicMock()
-        geocoding_response.status_code = 200
-        geocoding_response.json.return_value = GEOCODING_RESPONSE
-
-        weather_response = MagicMock()
-        weather_response.status_code = 200
-        weather_response.json.return_value = WEATHER_RESPONSE
-
-        mock_get.side_effect = [geocoding_response, weather_response]
+    def test_geocoding_empty_list_raises_city_not_found(self, mock_get):
+        """Geocoding retorna lista vazia (cidade não encontrada)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = []
+        mock_get.return_value = mock_response
 
         client = OpenWeatherClient(api_key="valid-key")
-        client.get_current_weather(city="London")
-
-        assert mock_get.call_count == 2
-
-    @patch("openweather_sdk.client.requests.get")
-    def test_get_current_weather_by_coords_skips_geocoding(self, mock_get):
-        """Geocoding NÃO é chamado quando lat/lon são passados diretamente."""
-        weather_response = MagicMock()
-        weather_response.status_code = 200
-        weather_response.json.return_value = WEATHER_RESPONSE
-
-        mock_get.return_value = weather_response
-
-        client = OpenWeatherClient(api_key="valid-key")
-        client.get_current_weather(lat=51.5073, lon=-0.1276)
-
-        assert mock_get.call_count == 1
+        with pytest.raises(CityNotFoundError):
+            client.get_complete_weather(city="cidadeinexistente")

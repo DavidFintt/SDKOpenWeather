@@ -5,6 +5,11 @@ import pytest
 
 from openweather_sdk.client import OpenWeatherClient
 from openweather_sdk.models import CompleteForecast, CurrentWeather, DayForecast
+from openweather_sdk.exceptions import (
+    InvalidCoordinatesError,
+    InvalidInputError,
+    NoWeatherDataError,
+)
 
 
 GEOCODING_RESPONSE = [
@@ -85,6 +90,54 @@ def _mock_weather_forecast(mock_get):
 
 class TestCompleteWeather:
     """Testes para get_complete_weather()."""
+
+    def test_empty_city_raises_invalid_input(self):
+        """Buscar cidade com string vazia."""
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(InvalidInputError):
+            client.get_complete_weather(city="")
+
+    def test_multiple_cities_raises_invalid_input(self):
+        """Buscar com múltiplas cidades (lista)."""
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(InvalidInputError):
+            client.get_complete_weather(city=["London", "Paris"])
+
+    def test_latitude_out_of_range_raises_error(self):
+        """Latitude fora do range (-90 a 90)."""
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(InvalidCoordinatesError):
+            client.get_complete_weather(lat=91, lon=0)
+
+    def test_longitude_out_of_range_raises_error(self):
+        """Longitude fora do range (-180 a 180)."""
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(InvalidCoordinatesError):
+            client.get_complete_weather(lat=0, lon=181)
+
+    def test_non_numeric_coordinates_raises_error(self):
+        """Latitude/longitude não numérica."""
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(InvalidCoordinatesError):
+            client.get_complete_weather(lat="abc", lon="xyz")
+
+    def test_multiple_coordinate_pairs_raises_error(self):
+        """Múltiplos pares de coordenadas."""
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(InvalidInputError):
+            client.get_complete_weather(lat=[51.5, 48.8], lon=[-0.1, 2.3])
+
+    @patch("openweather_sdk.client.requests.get")
+    def test_no_weather_data_for_coordinates_raises_error(self, mock_get):
+        """Coordenadas válidas mas sem dados meteorológicos (resposta vazia)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {}
+        mock_get.return_value = mock_response
+
+        client = OpenWeatherClient(api_key="valid-key")
+        with pytest.raises(NoWeatherDataError):
+            client.get_current_weather(lat=0.0, lon=0.0)
 
     @patch("openweather_sdk.client.requests.get")
     def test_returns_complete_forecast(self, mock_get):
