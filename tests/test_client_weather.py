@@ -28,7 +28,7 @@ class TestCurrentWeather:
         mock_get.return_value = weather_response
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_current_weather(lat=51.5073, lon=-0.1276)
+        result = client._get_current_weather(lat=51.5073, lon=-0.1276)
 
         assert isinstance(result, CurrentWeather)
         assert result.temp == 10

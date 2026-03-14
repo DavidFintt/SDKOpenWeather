@@ -51,7 +51,7 @@ class TestForecast:
         _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(lat=51.5073, lon=-0.1276)
+        result = client._get_forecast(lat=51.5073, lon=-0.1276)
 
         assert isinstance(result, list)
         assert len(result) > 0
@@ -63,7 +63,7 @@ class TestForecast:
         _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(lat=51.5073, lon=-0.1276)
+        result = client._get_forecast(lat=51.5073, lon=-0.1276)
 
         today_str = date.today().strftime("%d/%m")
         dates = [day.date for day in result]
@@ -75,7 +75,7 @@ class TestForecast:
         _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(lat=51.5073, lon=-0.1276)
+        result = client._get_forecast(lat=51.5073, lon=-0.1276)
 
         temps = {day.date: day.temp for day in result}
         assert temps["20/03"] == 11
@@ -90,7 +90,7 @@ class TestForecast:
         _mock_forecast(mock_get)
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(lat=51.5073, lon=-0.1276)
+        result = client._get_forecast(lat=51.5073, lon=-0.1276)
 
         dates = [day.date for day in result]
         assert dates == ["20/03", "21/03", "22/03", "23/03", "24/03"]
@@ -112,7 +112,7 @@ class TestForecast:
         mock_get.return_value = forecast_response
 
         client = OpenWeatherClient(api_key="valid-key")
-        result = client.get_forecast(lat=51.5073, lon=-0.1276)
+        result = client._get_forecast(lat=51.5073, lon=-0.1276)
 
         assert len(result) <= 5
 

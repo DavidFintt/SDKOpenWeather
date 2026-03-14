@@ -137,7 +137,7 @@ class TestCompleteWeather:
 
         client = OpenWeatherClient(api_key="valid-key")
         with pytest.raises(NoWeatherDataError):
-            client.get_current_weather(lat=0.0, lon=0.0)
+            client.get_complete_weather(lat=0.0, lon=0.0)
 
     @patch("openweather_sdk.client.requests.get")
     def test_returns_complete_forecast(self, mock_get):

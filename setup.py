@@ -8,7 +8,7 @@ setup(
         "requests",
     ],
     extras_require={
-        "dev": ["pytest"],
+        "dev": ["pytest", "pytest-sugar"],
     },
     python_requires=">=3.8",
 )

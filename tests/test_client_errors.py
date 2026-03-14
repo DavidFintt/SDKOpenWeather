@@ -12,7 +12,7 @@ from openweather_sdk.exceptions import (
 )
 
 
-METHODS = ["get_current_weather", "get_forecast"]
+METHODS = ["_get_current_weather", "_get_forecast"]
 
 
 class TestAPIKeyValidation:
