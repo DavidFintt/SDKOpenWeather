@@ -17,12 +17,23 @@ from openweather_sdk.models import CompleteForecast, CurrentWeather, DayForecast
 
 
 class OpenWeatherClient:
+    """Cliente principal para a API do OpenWeatherMap."""
+
     def __init__(self, api_key):
+        """Inicializa o cliente com a chave de API.
+
+        Args:
+            api_key: Chave de API do OpenWeatherMap.
+
+        Raises:
+            APIKeyInvalidError: Se a chave for vazia ou None.
+        """
         if not api_key:
             raise APIKeyInvalidError()
         self.api_key = api_key
 
     def _validate_input(self, city=None, lat=None, lon=None):
+        """Valida os parametros de entrada antes de chamar a API."""
         if city is not None:
             if isinstance(city, list):
                 raise InvalidInputError()
@@ -40,6 +51,7 @@ class OpenWeatherClient:
                 raise InvalidCoordinatesError()
 
     def _check_response(self, response):
+        """Verifica o status code da resposta e lanca excecoes especificas."""
         if response.status_code == 401:
             raise APIKeyInvalidError()
         if response.status_code == 429:
@@ -48,6 +60,7 @@ class OpenWeatherClient:
             raise OpenWeatherAPIError()
 
     def _request(self, url, params, method="get"):
+        """Executa a requisicao HTTP com timeout e tratamento de erros."""
         try:
             response = getattr(requests, method)(url, params=params, timeout=10)
         except requests.exceptions.Timeout:
@@ -56,6 +69,7 @@ class OpenWeatherClient:
         return response
 
     def _geocode(self, city):
+        """Converte nome de cidade em coordenadas via Geocoding API."""
         params = {"q": city, "limit": 1, "appid": self.api_key}
         response = self._request(GEOCODING_ENDPOINT, params)
         data = response.json()
@@ -64,6 +78,7 @@ class OpenWeatherClient:
         return data[0]
 
     def _get_current_weather(self, lat=None, lon=None):
+        """Busca o clima atual para as coordenadas informadas."""
         params = {
             "lat": lat, "lon": lon,
             "lang": "pt_br", "units": "metric",
@@ -81,6 +96,7 @@ class OpenWeatherClient:
         )
 
     def _get_forecast(self, lat=None, lon=None):
+        """Busca a previsao dos proximos 5 dias para as coordenadas informadas."""
         params = {
             "lat": lat, "lon": lon,
             "units": "metric",
@@ -106,6 +122,7 @@ class OpenWeatherClient:
         return forecast
 
     def get_complete_weather(self, city=None, lat=None, lon=None):
+        """Retorna clima atual e previsao de 5 dias para uma cidade ou coordenadas."""
         self._validate_input(city=city, lat=lat, lon=lon)
 
         city_name = None
